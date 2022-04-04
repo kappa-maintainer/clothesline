@@ -1,20 +1,18 @@
 buildscript {
     repositories {
         jcenter()
-        maven { url = 'http://files.minecraftforge.net/maven' }
+        maven { url = 'https://maven.minecraftforge.net' }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:5.1.+'
     }
 }
 
 plugins {
     id 'com.matthewprenger.cursegradle' version '1.1.0'
 }
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'jacoco'
-apply plugin: 'maven'
-apply plugin: 'signing'
 
 version = '1.12.2-0.0.3.0'
 group = 'com.jamieswhiteshirt'
@@ -23,9 +21,30 @@ archivesBaseName = 'clothesline'
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
 
 minecraft {
-    version = '1.12.2-14.23.5.2768'
-    runDir = 'run'
-    mappings = 'stable_39'
+    mappings channel: 'stable', version: '39-1.12'
+        runs {
+        client {
+
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+            
+        }
+
+        server {
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+            
+        }
+    }
 }
 
 repositories {
@@ -34,10 +53,10 @@ repositories {
         url 'https://oss.sonatype.org/content/repositories/snapshots'
     }
     maven {
-        url 'http://maven.jamieswhiteshirt.com/libs-snapshot/'
+        url 'https://maven.jamieswhiteshirt.com/libs-snapshot/'
     }
     maven {
-        url 'http://maven.jamieswhiteshirt.com/libs-release/'
+        url 'https://maven.jamieswhiteshirt.com/libs-release/'
     }
 }
 
@@ -48,31 +67,31 @@ configurations {
 }
 
 dependencies {
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
+    
     contained 'com.jamieswhiteshirt:rtree-3i-lite:0.3.0'
-    compile 'com.jamieswhiteshirt:rtree-3i-lite:0.3.0'
+    compileOnly 'com.jamieswhiteshirt:rtree-3i-lite:0.3.0'
+    runtimeOnly 'com.jamieswhiteshirt:rtree-3i-lite:0.3.0'
     contained 'com.jamieswhiteshirt:clothesline-hooks:1.12.2-0.0.1.2'
-    deobfCompile 'com.jamieswhiteshirt:clothesline-hooks:1.12.2-0.0.1.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.2.+'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.2.+'
-    testCompile 'org.mockito:mockito-core:2.+'
+    implementation fg.deobf('com.jamieswhiteshirt:clothesline-hooks:1.12.2-0.0.1.2')
+    implementation 'org.junit.jupiter:junit-jupiter-api:5.2.+'
+    runtimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.2.+'
+    implementation 'org.mockito:mockito-core:2.+'
 }
 
 test {
     useJUnitPlatform()
 }
 
-jacocoTestReport {
-    sourceSets sourceSets.api
-}
 
 processResources {
+    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
     inputs.property 'version', project.version
-    inputs.property 'mcversion', project.minecraft.version
 
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
                 
-        expand 'version':project.version, 'mcversion':project.minecraft.version
+        expand 'version':project.version, 'mcversion':'1.12.2'
     }
         
     from(sourceSets.main.resources.srcDirs) {
@@ -87,7 +106,6 @@ processResources {
 // Let build systems handle the transitive dependencies of the jar
 // The jar must not include contained dependencies
 jar {
-    from sourceSets.api.output
     from sourceSets.main.output
 
     manifest {
@@ -103,7 +121,6 @@ jar {
 task bundleJar(type: Jar) {
     classifier 'bundle'
 
-    from sourceSets.api.output
     from sourceSets.main.output
 
     from(configurations.contained.files) {
@@ -121,90 +138,6 @@ task bundleJar(type: Jar) {
 }
 
 task sourcesJar(type: Jar) {
-    from sourceSets.api.allSource
     from sourceSets.main.allSource
     classifier = 'sources'
-}
-
-// The jar is reobfuscated with the default reobfJar task
-// Create reobfBundleJar task
-reobf.create('bundleJar')
-
-task signJar(type: SignJar, dependsOn: reobfJar) {
-    onlyIf {
-        project.hasProperty('keyStore')
-    }
-
-    inputFile = jar.archivePath
-    outputFile = jar.archivePath
-
-    keyStore = project.properties.keyStore
-    alias = project.properties.keyStoreAlias
-    storePass = project.properties.keyStorePass
-    keyPass = project.properties.keyStoreKeyPass
-}
-
-task signBundleJar(type: SignJar, dependsOn: reobfBundleJar) {
-    onlyIf {
-        project.hasProperty('keyStore')
-    }
-
-    inputFile = bundleJar.archivePath
-    outputFile = bundleJar.archivePath
-
-    keyStore = project.properties.keyStore
-    alias = project.properties.keyStoreAlias
-    storePass = project.properties.keyStorePass
-    keyPass = project.properties.keyStoreKeyPass
-}
-
-artifacts {
-    archives(signJar.outputFile) {
-        builtBy signJar
-    }
-    archives(signBundleJar.outputFile) {
-        builtBy signBundleJar
-    }
-    archives sourceJar
-}
-
-project.ext.isReleaseVersion = !version.endsWith("-SNAPSHOT")
-
-signing {
-    required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-}
-
-uploadArchives {
-    repositories.mavenDeployer {
-        repository(url: 'https://maven.jamieswhiteshirt.com/libs-release/') {
-            authentication(userName: project.properties.mavenUser, password: project.properties.mavenPassword)
-        }
-        snapshotRepository(url: 'https://maven.jamieswhiteshirt.com/libs-snapshot/') {
-            authentication(userName: project.properties.mavenUser, password: project.properties.mavenPassword)
-        }
-
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-    }
-}
-
-curseforge {
-    if (project.hasProperty('curseForgeApiKey')) {
-        apiKey = project.properties.curseForgeApiKey
-    }
-    project {
-        id = '300262'
-        changelogType = 'markdown'
-        changelog = file('CHANGELOG.md')
-        releaseType = 'beta'
-        mainArtifact(signBundleJar.outputFile) {
-            displayName = "Clothesline $project.version"
-        }
-    }
-}
-
-afterEvaluate {
-    // CurseGradle has ForgeGradle integration, but it falls short for signed jars
-    // CurseGradle generates tasks in afterEvaluate for each project as such
-    tasks.curseforge300262.dependsOn signBundleJar
 }
