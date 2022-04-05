@@ -14,7 +14,7 @@ plugins {
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'jacoco'
 
-version = '1.12.2-0.0.3.0'
+version = '1.12.2-0.0.4.0'
 group = 'com.jamieswhiteshirt'
 archivesBaseName = 'clothesline'
 
@@ -58,6 +58,12 @@ repositories {
     maven {
         url 'https://maven.jamieswhiteshirt.com/libs-release/'
     }
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
 }
 
 configurations {
@@ -68,12 +74,16 @@ configurations {
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
+
+    compileOnly fg.deobf("curse.maven:mysticalmechanics-300742:3006392")
+    runtimeOnly fg.deobf("curse.maven:mysticalmechanics-300742:3006392")
     
     contained 'com.jamieswhiteshirt:rtree-3i-lite:0.3.0'
     compileOnly 'com.jamieswhiteshirt:rtree-3i-lite:0.3.0'
     runtimeOnly 'com.jamieswhiteshirt:rtree-3i-lite:0.3.0'
     contained 'com.jamieswhiteshirt:clothesline-hooks:1.12.2-0.0.1.2'
-    implementation fg.deobf('com.jamieswhiteshirt:clothesline-hooks:1.12.2-0.0.1.2')
+    compileOnly fg.deobf('com.jamieswhiteshirt:clothesline-hooks:1.12.2-0.0.1.2')
+    runtimeOnly fg.deobf('com.jamieswhiteshirt:clothesline-hooks:1.12.2-0.0.1.2')
     implementation 'org.junit.jupiter:junit-jupiter-api:5.2.+'
     runtimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.2.+'
     implementation 'org.mockito:mockito-core:2.+'

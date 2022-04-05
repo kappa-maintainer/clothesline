@@ -59,14 +59,12 @@ import java.util.function.BiPredicate;
     modid = Clothesline.MODID,
     version = Clothesline.VERSION,
     name = "Clothesline",
-    dependencies = Clothesline.DEPENDENCIES,
-    certificateFingerprint = Clothesline.CERTIFICATE_FINGERPRINT
+    dependencies = Clothesline.DEPENDENCIES
 )
 public class Clothesline {
     public static final String MODID = "clothesline";
-    public static final String VERSION = "1.12.2-0.0.2.2";
-    public static final String DEPENDENCIES = "required-after:clothesline-hooks;required-after:forge@[14.23.4.2705,)";
-    public static final String CERTIFICATE_FINGERPRINT = "3bae2d07b93a5971335cb2de15230c19c103db32";
+    public static final String VERSION = "1.12.2-0.0.4.0";
+    public static final String DEPENDENCIES = "required-after:clothesline-hooks;required-after:mysticalmechanics;required-after:forge@[14.23.5.2860,)";
 
     @CapabilityInject(INetworkManager.class)
     public static final Capability<INetworkManager> NETWORK_MANAGER_CAPABILITY = Util.nonNullInjected();
