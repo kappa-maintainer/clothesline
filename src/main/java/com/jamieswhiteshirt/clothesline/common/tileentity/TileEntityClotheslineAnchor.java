@@ -35,7 +35,7 @@ public class TileEntityClotheslineAnchor extends TileEntity implements ITickable
     private INetworkManager manager;
     private boolean hasCrank;
     private boolean canInsert = false;
-    private boolean flag = false;
+    private boolean initflag = false;
     private IItemHandler neighbourHandler;
     private int consPower = 0;
     EnumFacing connect;
@@ -77,39 +77,46 @@ public class TileEntityClotheslineAnchor extends TileEntity implements ITickable
     public void setWorld(World world) {
         super.setWorld(world);
         manager = world.getCapability(Clothesline.NETWORK_MANAGER_CAPABILITY, null);
+
+
     }
 
     @Override
     public void update() {
-        if(!flag){
+        INetworkNode node = getNetworkNode();
+        if (node != null && consPower != 0) {
+            INetworkState networkState = node.getNetwork().getState();
+            if(networkState.getMomentum() < consPower)
+                networkState.setMomentum(networkState.getMomentum() + consPower / 3);
+        }
+
+
+        if(!initflag) {
             connect = EnumFacing.byIndex(this.getBlockMetadata()).getOpposite();
             TileEntity toInsert = world.getTileEntity(getPos().add(connect.getXOffset(), connect.getYOffset(), connect.getZOffset()));
             if(toInsert != null && toInsert.hasCapability(ITEM_HANDLER_CAPABILITY, connect)){
                 canInsert = true;
                 neighbourHandler = toInsert.getCapability(ITEM_HANDLER_CAPABILITY, connect);
             }
-            flag = true;
+            initflag = true;
         }
+
         if(canInsert && world != null && !world.isRemote) {
             IItemHandler netHandler = getCapability(ITEM_HANDLER_CAPABILITY, EnumFacing.DOWN);
             if(netHandler == null) return;
-            ItemStack stack = netHandler.extractItem(0, 1, false);
-            int i;
-            for(i = 0; i < neighbourHandler.getSlots(); i++) {
-                if(neighbourHandler.getStackInSlot(i).getCount() < neighbourHandler.getSlotLimit(i))
-                    break;
-            }
-            if(!stack.isEmpty()){
-                netHandler.insertItem(i, neighbourHandler.insertItem(1, stack, false), false);
-            }
+            ItemStack stack = netHandler.extractItem(0, 1, true);
+            if(!stack.isEmpty()) {
+                int i;
+                for (i = 0; i < neighbourHandler.getSlots(); i++) {
+                    stack = neighbourHandler.insertItem(i, stack, false);
+                    if(stack.getCount() == 0){
+                        netHandler.extractItem(0, 1, false);
+                        break;
+                    }
+                }
 
-        }
 
-        INetworkNode node = getNetworkNode();
-        if (node != null && consPower != 0) {
-            INetworkState networkState = node.getNetwork().getState();
-            if(networkState.getMomentum() < consPower)
-                networkState.setMomentum(networkState.getMomentum() + consPower / 3);
+            }
         }
     }
 

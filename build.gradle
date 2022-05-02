@@ -14,7 +14,7 @@ plugins {
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'jacoco'
 
-version = '1.12.2-0.0.4.0'
+version = '1.12.2-0.0.4.2'
 group = 'com.jamieswhiteshirt'
 archivesBaseName = 'clothesline'
 
@@ -118,17 +118,13 @@ processResources {
 jar {
     from sourceSets.main.output
 
-    manifest {
-        attributes([
-                'Maven-Artifact': "${project.group}:${project.archivesBaseName}:${project.version}",
-                'Timestamp': System.currentTimeMillis()
-        ])
-    }
+
 }
 
 // The bundle jar is ready to be dropped in the mods folder and must contain its dependencies
 // The bundle jar must include contained dependencies
 task bundleJar(type: Jar) {
+    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
     classifier 'bundle'
 
     from sourceSets.main.output
@@ -146,6 +142,8 @@ task bundleJar(type: Jar) {
         ])
     }
 }
+
+reobf.create('bundleJar')
 
 task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
